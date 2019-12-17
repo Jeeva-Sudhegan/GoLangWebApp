@@ -14,25 +14,25 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type Contacts struct {
+	Contacts []Contact `json:"contacts"`
+}
+
+type Contact struct {
+	ID             string          `json:"id"`
+	Name           string          `json:"name"`
+	Contactmethods []ContactMethod `json:"contactMethods"`
+}
+
+type ContactMethod struct {
+	ID         string `json:"id"`
+	MethodType string `json:"methodType"`
+	Value      string `json:"value"`
+}
+
 var contacts Contacts
 
-func handler(w http.ResponseWriter, request *http.Request) {
-	vars := mux.Vars(request)
-	name := vars["name"]
-	fmt.Fprintf(w, "Hello %s\n", name)
-}
-
-func getContacts(w http.ResponseWriter, request *http.Request) {
-	// var result map[string]interface{}
-	// json.Unmarshal([]byte(byteValue), &result) // if the structure is not known
-	contacts.Contacts[0].Name = "Sudhegan"
-	jsonFormat, err := json.MarshalIndent(contacts, "", "  ")
-	if err != nil {
-		log.Fatal(err)
-	}
-	w.Write(jsonFormat)
-}
-
+// Middlewares
 func logging(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Logging: " + r.URL.Path)
@@ -88,32 +88,35 @@ func compose(handler http.HandlerFunc, middlewares ...func(http.HandlerFunc) htt
 	return handler
 }
 
-type Contacts struct {
-	Contacts []Contact `json:"contacts"`
-}
-
-type Contact struct {
-	ID             string          `json:"id"`
-	Name           string          `json:"name"`
-	Contactmethods []ContactMethod `json:"contactMethods"`
-}
-
-type ContactMethod struct {
-	ID         string `json:"id"`
-	MethodType string `json:"methodType"`
-	Value      string `json:"value"`
-}
-
 func callCompose(handler http.HandlerFunc) http.HandlerFunc {
 	return compose(handler, logging, object, elapsedTimeForRequest)
 }
 
+// Utilities function
 func generateUUID() string {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		log.Fatal(err)
 	}
 	return id.String()
+}
+
+// Handler functions
+func handler(w http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	name := vars["name"]
+	fmt.Fprintf(w, "Hello %s\n", name)
+}
+
+func getContacts(w http.ResponseWriter, request *http.Request) {
+	// var result map[string]interface{}
+	// json.Unmarshal([]byte(byteValue), &result) // if the structure is not known
+	contacts.Contacts[0].Name = "Sudhegan"
+	jsonFormat, err := json.MarshalIndent(contacts, "", "  ")
+	if err != nil {
+		log.Fatal(err)
+	}
+	w.Write(jsonFormat)
 }
 
 func postHandler(w http.ResponseWriter, request *http.Request) {
