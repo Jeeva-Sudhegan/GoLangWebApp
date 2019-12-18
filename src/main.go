@@ -7,9 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
-
-	"github.com/google/uuid"
+	"utilities"
 
 	"github.com/gorilla/mux"
 )
@@ -31,24 +29,6 @@ type ContactMethod struct {
 }
 
 var contacts Contacts
-
-// Middlewares
-func logging(handler http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Logging: " + r.URL.Path)
-		handler(w, r)
-	}
-}
-
-func elapsedTimeForRequest(handler http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		defer func() {
-			log.Println("Elapsed time for the request "+r.URL.Path+" is", time.Since(start))
-		}()
-		handler(w, r)
-	}
-}
 
 func readObject() {
 	log.Println("Creating the object from file...")
@@ -81,26 +61,6 @@ func writeObject() {
 // 	}
 // }
 
-func compose(handler http.HandlerFunc, middlewares ...func(http.HandlerFunc) http.HandlerFunc) http.HandlerFunc {
-	for _, handlerFunc := range middlewares {
-		handler = handlerFunc(handler)
-	}
-	return handler
-}
-
-func callCompose(handler http.HandlerFunc) http.HandlerFunc {
-	return compose(handler, logging, elapsedTimeForRequest)
-}
-
-// Utilities function
-func generateUUID() string {
-	id, err := uuid.NewUUID()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return id.String()
-}
-
 // Handler functions
 func handler(w http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
@@ -123,8 +83,8 @@ func getContacts(w http.ResponseWriter, request *http.Request) {
 
 func postHandler(w http.ResponseWriter, request *http.Request) {
 
-	contactID := generateUUID()
-	contactMethodID := generateUUID()
+	contactID := utilities.GenerateUUID()
+	contactMethodID := utilities.GenerateUUID()
 	contactMethod1 := ContactMethod{
 		contactMethodID,
 		"email",
@@ -154,11 +114,11 @@ func main() {
 	readObject()
 	// defer writeObject()
 	router := mux.NewRouter()
-	router.HandleFunc("/contacts", callCompose(getContacts))
+	router.HandleFunc("/contacts", utilities.CallCompose(getContacts))
 	router.HandleFunc("/logout", closeHandler)
 	nameRouter := router.PathPrefix("/contact").Subrouter() // restricting handler under same prefix
-	nameRouter.HandleFunc("/", callCompose(postHandler)).Methods("POST")
-	nameRouter.HandleFunc("/{name}", callCompose(handler)).Methods("GET")
+	nameRouter.HandleFunc("/", utilities.CallCompose(postHandler)).Methods("POST")
+	nameRouter.HandleFunc("/{name}", utilities.CallCompose(handler)).Methods("GET")
 	// nameRouter.HandleFunc("/{name}", handler).Methods("GET") // restrict handler to method
 	// nameRouter.HandleFunc("/{name}", handler).Host("localhost") // restrict handler to domain
 	// nameRouter.HandleFunc("/{name}", handler).Schemes("http")   // restrict handler to protocol http or https
