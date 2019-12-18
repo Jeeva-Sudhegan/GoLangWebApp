@@ -73,13 +73,13 @@ func writeObject() {
 	}
 }
 
-func object(handler http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		readObject()
-		defer writeObject()
-		handler(w, r)
-	}
-}
+// func getObject(handler http.HandlerFunc) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		readObject()
+// 		defer writeObject()
+// 		handler(w, r)
+// 	}
+// }
 
 func compose(handler http.HandlerFunc, middlewares ...func(http.HandlerFunc) http.HandlerFunc) http.HandlerFunc {
 	for _, handlerFunc := range middlewares {
@@ -89,7 +89,7 @@ func compose(handler http.HandlerFunc, middlewares ...func(http.HandlerFunc) htt
 }
 
 func callCompose(handler http.HandlerFunc) http.HandlerFunc {
-	return compose(handler, logging, object, elapsedTimeForRequest)
+	return compose(handler, logging, elapsedTimeForRequest)
 }
 
 // Utilities function
@@ -111,7 +111,9 @@ func handler(w http.ResponseWriter, request *http.Request) {
 func getContacts(w http.ResponseWriter, request *http.Request) {
 	// var result map[string]interface{}
 	// json.Unmarshal([]byte(byteValue), &result) // if the structure is not known
-	contacts.Contacts[0].Name = "Sudhegan"
+	if len(contacts.Contacts) != 0 {
+		contacts.Contacts[0].Name = "Sudhegan"
+	}
 	jsonFormat, err := json.MarshalIndent(contacts, "", "  ")
 	if err != nil {
 		log.Fatal(err)
@@ -141,10 +143,19 @@ func postHandler(w http.ResponseWriter, request *http.Request) {
 	w.Write(jsonFormat)
 }
 
+func closeHandler(w http.ResponseWriter, r *http.Request) {
+	writeObject()
+	log.Println("Stopping the server...")
+	os.Exit(0)
+}
+
 func main() {
 
+	readObject()
+	// defer writeObject()
 	router := mux.NewRouter()
 	router.HandleFunc("/contacts", callCompose(getContacts))
+	router.HandleFunc("/logout", closeHandler)
 	nameRouter := router.PathPrefix("/contact").Subrouter() // restricting handler under same prefix
 	nameRouter.HandleFunc("/", callCompose(postHandler)).Methods("POST")
 	nameRouter.HandleFunc("/{name}", callCompose(handler)).Methods("GET")
