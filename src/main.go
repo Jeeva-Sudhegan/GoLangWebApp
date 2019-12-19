@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dto"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -12,23 +13,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type Contacts struct {
-	Contacts []Contact `json:"contacts"`
-}
-
-type Contact struct {
-	ID             string          `json:"id"`
-	Name           string          `json:"name"`
-	Contactmethods []ContactMethod `json:"contactMethods"`
-}
-
-type ContactMethod struct {
-	ID         string `json:"id"`
-	MethodType string `json:"methodType"`
-	Value      string `json:"value"`
-}
-
-var contacts Contacts
+var contacts dto.Contacts
 
 func readObject() {
 	log.Println("Creating the object from file...")
@@ -85,15 +70,15 @@ func postHandler(w http.ResponseWriter, request *http.Request) {
 
 	contactID := utilities.GenerateUUID()
 	contactMethodID := utilities.GenerateUUID()
-	contactMethod1 := ContactMethod{
+	contactMethod1 := dto.ContactMethod{
 		contactMethodID,
 		"email",
 		"jeevasudhegan1198@gmail.com",
 	}
-	contact := Contact{
+	contact := dto.Contact{
 		contactID,
 		"Jeeva",
-		[]ContactMethod{contactMethod1},
+		[]dto.ContactMethod{contactMethod1},
 	}
 	contacts.Contacts = append(contacts.Contacts, contact)
 	jsonFormat, err := json.MarshalIndent(contact, "", "  ")
