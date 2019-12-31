@@ -8,12 +8,20 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"text/template"
 	"utilities"
+
+	"github.com/gorilla/websocket"
 
 	"github.com/gorilla/mux"
 )
 
 var contacts dto.Contacts
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
 
 func readObject() {
 	log.Println("Creating the object from file...")
@@ -48,9 +56,22 @@ func writeObject() {
 
 // Handler functions
 func handler(w http.ResponseWriter, request *http.Request) {
-	vars := mux.Vars(request)
-	name := vars["name"]
-	fmt.Fprintf(w, "Hello %s\n", name)
+	vars := mux.Vars(request) // this returns a map
+	if len(vars) == 0 {
+		data := dto.TodoPageData{
+			PageTitle: "My TODO list",
+			Todos: []dto.Todo{
+				{Title: "Task 1", Done: false},
+				{Title: "Task 2", Done: true},
+				{Title: "Task 3", Done: true},
+			},
+		}
+		tmpl := template.Must(template.ParseFiles("layout.html"))
+		tmpl.Execute(w, data)
+	} else {
+		name := vars["name"]
+		fmt.Fprintf(w, "Hello %s\n", name)
+	}
 }
 
 func getContacts(w http.ResponseWriter, request *http.Request) {
@@ -94,15 +115,49 @@ func closeHandler(w http.ResponseWriter, r *http.Request) {
 	os.Exit(0)
 }
 
+func chatsocket(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil) // error ignored for sake of simplicity
+
+	if err != nil {
+		log.Fatal("unable to connect to websocket")
+		return
+	}
+
+	for {
+		// Read message from browser
+		msgType, msg, err := conn.ReadMessage()
+		if err != nil {
+			return
+		}
+
+		// Print the message to the console
+		fmt.Printf("%s sent: %s\n", conn.RemoteAddr(), string(msg))
+
+		// Write message back to browser
+		if err = conn.WriteMessage(msgType, msg); err != nil {
+			return
+		}
+	}
+}
+
 func main() {
 
 	readObject()
 	// defer writeObject()
+	fs := http.FileServer(http.Dir("/assets/"))
 	router := mux.NewRouter()
+	http.HandleFunc("/socket", chatsocket)
+	router.Handle("/static/", http.StripPrefix("/static/", fs))
+	router.HandleFunc("/echo", chatsocket)
+
+	router.HandleFunc("/websockets", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "websockets.html")
+	})
 	router.HandleFunc("/contacts", utilities.CallCompose(getContacts))
 	router.HandleFunc("/logout", closeHandler)
 	nameRouter := router.PathPrefix("/contact").Subrouter() // restricting handler under same prefix
 	nameRouter.HandleFunc("/", utilities.CallCompose(postHandler)).Methods("POST")
+	nameRouter.HandleFunc("/", utilities.CallCompose(handler)).Methods("GET")
 	nameRouter.HandleFunc("/{name}", utilities.CallCompose(handler)).Methods("GET")
 	// nameRouter.HandleFunc("/{name}", handler).Methods("GET") // restrict handler to method
 	// nameRouter.HandleFunc("/{name}", handler).Host("localhost") // restrict handler to domain
