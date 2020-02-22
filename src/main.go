@@ -16,7 +16,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var contacts dto.Contacts
+// go-lint disable next line
+type Contacts = dto.Contacts // type aliasing just alias instead of creating new type
+
+var contacts Contacts
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
