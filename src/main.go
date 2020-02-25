@@ -1,7 +1,8 @@
 package main
 
 import (
-	"dto"
+	"WebApp/src/dto"
+	"WebApp/src/utilities"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,14 +10,13 @@ import (
 	"net/http"
 	"os"
 	"text/template"
-	"utilities"
 
 	"github.com/gorilla/websocket"
 
 	"github.com/gorilla/mux"
 )
 
-// go-lint disable next line
+// Contacts imported from dto
 type Contacts = dto.Contacts // type aliasing just alias instead of creating new type
 
 var contacts Contacts

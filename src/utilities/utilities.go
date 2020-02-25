@@ -2,13 +2,14 @@ package utilities
 
 import (
 	"log"
-	"middlewares"
 	"net/http"
+
+	"WebApp/src/middlewares"
 
 	"github.com/google/uuid"
 )
 
-// Utilities function
+// GenerateUUID Utilities function
 func GenerateUUID() string {
 	id, err := uuid.NewUUID()
 	if err != nil {
@@ -24,6 +25,7 @@ func compose(handler http.HandlerFunc, middlewares ...func(http.HandlerFunc) htt
 	return handler
 }
 
+// CallCompose method
 func CallCompose(handler http.HandlerFunc) http.HandlerFunc {
 	return compose(handler, middlewares.Logging, middlewares.ElapsedTimeForRequest)
 }
