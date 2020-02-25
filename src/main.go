@@ -95,14 +95,14 @@ func postHandler(w http.ResponseWriter, request *http.Request) {
 	contactID := utilities.GenerateUUID()
 	contactMethodID := utilities.GenerateUUID()
 	contactMethod1 := dto.ContactMethod{
-		contactMethodID,
-		"email",
-		"jeevasudhegan1198@gmail.com",
+		ID:         contactMethodID,
+		MethodType: "email",
+		Value:      "jeevasudhegan1198@gmail.com",
 	}
 	contact := dto.Contact{
-		contactID,
-		"Jeeva",
-		[]dto.ContactMethod{contactMethod1},
+		ID:             contactID,
+		Name:           "Jeeva",
+		Contactmethods: []dto.ContactMethod{contactMethod1},
 	}
 	contacts.Contacts = append(contacts.Contacts, contact)
 	jsonFormat, err := json.MarshalIndent(contact, "", "  ")
