@@ -143,6 +143,17 @@ func chatsocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Code tested for middlewares executed before the handler
+func printMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		if len(vars) != 0 {
+			log.Println("The url request is from " + vars["name"])
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 
 	readObject()
@@ -165,6 +176,8 @@ func main() {
 	// nameRouter.HandleFunc("/{name}", handler).Methods("GET") // restrict handler to method
 	// nameRouter.HandleFunc("/{name}", handler).Host("localhost") // restrict handler to domain
 	// nameRouter.HandleFunc("/{name}", handler).Schemes("http")   // restrict handler to protocol http or https
+
+	router.Use(printMiddleware) // used the middleware
 	http.ListenAndServe(":8080", router)
 
 }
